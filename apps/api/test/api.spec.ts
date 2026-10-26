@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
 import request from 'supertest';
+import { AlertsModule } from '../src/alerts/alerts.module';
 import { AuthModule } from '../src/auth/auth.module';
 import { DevicesModule } from '../src/devices/devices.module';
 import { PrismaModule } from '../src/prisma/prisma.module';
@@ -18,6 +19,11 @@ const prismaMock = {
   user: { findUnique: jest.fn(({ where }) => users.find((u) => u.email === where.email) ?? null) },
   device: { findMany: jest.fn(async () => devices) },
   telemetry: { findMany: jest.fn(async () => []) },
+  alert: {
+    findMany: jest.fn(async () => [
+      { id: 1, deviceId: 1, type: 'TEMPERATURE', value: 27.5, threshold: 26, message: 'Température élevée', at: new Date(), device: { name: 'Capteur Versailles' } },
+    ]),
+  },
 };
 
 describe('API', () => {
@@ -25,7 +31,7 @@ describe('API', () => {
 
   beforeAll(async () => {
     users = [{ id: 1, email: 'admin@demo.fr', passwordHash: await bcrypt.hash('demo1234', 4), role: 'ADMIN' }];
-    const moduleRef = await Test.createTestingModule({ imports: [PrismaModule, AuthModule, DevicesModule] })
+    const moduleRef = await Test.createTestingModule({ imports: [PrismaModule, AuthModule, DevicesModule, AlertsModule] })
       .overrideProvider(PrismaService)
       .useValue(prismaMock)
       .compile();
@@ -93,6 +99,17 @@ describe('API', () => {
         .get('/devices/abc/telemetry')
         .set('Authorization', `Bearer ${token}`)
         .expect(400);
+    });
+  });
+
+  describe('GET /alerts', () => {
+    it('est protégé par le JWT (401)', () => request(app.getHttpServer()).get('/alerts').expect(401));
+
+    it('renvoie le journal avec le nom de l’équipement', async () => {
+      const token = await login();
+      const res = await request(app.getHttpServer()).get('/alerts').set('Authorization', `Bearer ${token}`).expect(200);
+      expect(res.body[0]).toMatchObject({ type: 'TEMPERATURE', deviceName: 'Capteur Versailles' });
+      expect(res.body[0].device).toBeUndefined();
     });
   });
 });

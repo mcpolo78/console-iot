@@ -14,6 +14,7 @@ test('connexion puis tableau de bord avec mesures en temps réel', async ({ page
   await expect(row).toBeVisible();
   // Une mesure arrive par WebSocket (toutes les 3 s)
   await expect(row).toContainText(/\d+(\.\d)? °C/, { timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Journal des alertes' })).toBeVisible();
 });
 
 test('mauvais mot de passe : message d’erreur', async ({ page }) => {
