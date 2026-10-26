@@ -1,12 +1,19 @@
 {
   "name": "iot-console",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev:api": "npm run start:dev -w api",
     "dev:web": "npm run dev -w web",
     "build": "npm run build -w api && npm run build -w web",
     "db:migrate": "npm run prisma:migrate -w api",
-    "db:seed": "npm run prisma:seed -w api"
+    "db:seed": "npm run prisma:seed -w api",
+    "test": "npm test -w api",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
   }
 }

@@ -1,5 +1,7 @@
 # Console IoT – supervision d'équipements en temps réel
 
+[![CI](https://github.com/mcpolo78/console-iot/actions/workflows/ci.yml/badge.svg)](https://github.com/mcpolo78/console-iot/actions/workflows/ci.yml)
+
 Application fullstack TypeScript : un tableau de bord qui affiche sur une carte des équipements connectés (capteurs, balises, relais) et leurs mesures en temps réel.
 
 ![Aperçu](docs/apercu.png)
@@ -33,6 +35,15 @@ npm run db:seed         # comptes de démo + 4 équipements
 npm run dev:api         # http://localhost:4000
 npm run dev:web         # http://localhost:3000
 ```
+
+## Tests
+
+```bash
+npm test                # Jest côté API (auth, garde JWT, équipements), sans base
+npm run test:e2e        # Playwright : connexion → tableau de bord (API + front compilés, base seedée)
+```
+
+La CI GitHub Actions (`.github/workflows/ci.yml`) installe, compile l'API et le front, lance Jest puis Playwright contre un service `postgres:16`.
 
 Ou tout en conteneurs : `docker compose up --build` (puis le seed : `docker compose exec api npx ts-node prisma/seed.ts`, ou depuis l'hôte avec `npm run db:seed`).
 

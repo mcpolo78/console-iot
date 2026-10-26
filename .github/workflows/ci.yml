@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: iot
+          POSTGRES_PASSWORD: iot
+          POSTGRES_DB: iot
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U iot"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://iot:iot@localhost:5432/iot
+      JWT_SECRET: ci-secret
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build API + front
+        run: npm run build
+      - name: Tests API (Jest)
+        run: npm test
+      - name: Base de test (migrations + seed)
+        working-directory: apps/api
+        run: npx prisma migrate deploy && npx ts-node prisma/seed.ts
+      - name: Navigateur Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Tests e2e (Playwright)
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7
