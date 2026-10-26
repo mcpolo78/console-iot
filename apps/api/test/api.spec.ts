@@ -18,7 +18,7 @@ let users: { id: number; email: string; passwordHash: string; role: string }[] =
 const prismaMock = {
   user: { findUnique: jest.fn(({ where }) => users.find((u) => u.email === where.email) ?? null) },
   device: { findMany: jest.fn(async () => devices) },
-  telemetry: { findMany: jest.fn(async () => []) },
+  telemetry: { findMany: jest.fn(async (_args: unknown) => [{ temperature: 22.4, battery: 80, at: new Date() }]) },
   alert: {
     findMany: jest.fn(async () => [
       { id: 1, deviceId: 1, type: 'TEMPERATURE', value: 27.5, threshold: 26, message: 'Température élevée', at: new Date(), device: { name: 'Capteur Versailles' } },
@@ -99,6 +99,32 @@ describe('API', () => {
         .get('/devices/abc/telemetry')
         .set('Authorization', `Bearer ${token}`)
         .expect(400);
+    });
+  });
+
+  describe('GET /devices/:id/telemetry', () => {
+    it("renvoie l'historique de la dernière heure par défaut, du plus ancien au plus récent", async () => {
+      const token = await login();
+      const res = await request(app.getHttpServer())
+        .get('/devices/1/telemetry')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      expect(res.body[0].temperature).toBe(22.4);
+      const args = prismaMock.telemetry.findMany.mock.calls.at(-1)![0] as any;
+      expect(args.where.deviceId).toBe(1);
+      expect(args.orderBy).toEqual({ at: 'asc' });
+      expect(Date.now() - args.where.at.gte.getTime()).toBeGreaterThanOrEqual(60 * 60_000 - 1000);
+      expect(Date.now() - args.where.at.gte.getTime()).toBeLessThan(60 * 60_000 + 5000);
+    });
+
+    it('plafonne la fenêtre à 24 h', async () => {
+      const token = await login();
+      await request(app.getHttpServer())
+        .get('/devices/1/telemetry?minutes=99999')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+      const args = prismaMock.telemetry.findMany.mock.calls.at(-1)![0] as any;
+      expect(Date.now() - args.where.at.gte.getTime()).toBeLessThan(1441 * 60_000);
     });
   });
 

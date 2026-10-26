@@ -15,6 +15,11 @@ test('connexion puis tableau de bord avec mesures en temps réel', async ({ page
   // Une mesure arrive par WebSocket (toutes les 3 s)
   await expect(row).toContainText(/\d+(\.\d)? °C/, { timeout: 15_000 });
   await expect(page.getByRole('heading', { name: 'Journal des alertes' })).toBeVisible();
+
+  // Clic sur un équipement : graphique de température sur la dernière heure
+  await row.click();
+  await expect(page.getByRole('heading', { name: /Température – Capteur Versailles/ })).toBeVisible();
+  await expect(page.locator('.recharts-line-curve')).toBeVisible({ timeout: 15_000 });
 });
 
 test('mauvais mot de passe : message d’erreur', async ({ page }) => {

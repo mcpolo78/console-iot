@@ -7,12 +7,20 @@ function markerColor(t?: Telemetry) {
   return t.alert ? '#ef4444' : '#22c55e';
 }
 
-export default function DeviceMap({ devices, last }: { devices: Device[]; last: Record<number, Telemetry> }) {
+type Props = { devices: Device[]; last: Record<number, Telemetry>; onSelect: (id: number) => void };
+
+export default function DeviceMap({ devices, last, onSelect }: Props) {
   return (
     <MapContainer center={[48.9, 2.1]} zoom={10} style={{ height: 400, borderRadius: 8 }}>
       <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {devices.map((d) => (
-        <CircleMarker key={d.id} center={[d.lat, d.lng]} radius={10} pathOptions={{ color: markerColor(last[d.id]) }}>
+        <CircleMarker
+          key={d.id}
+          center={[d.lat, d.lng]}
+          radius={10}
+          pathOptions={{ color: markerColor(last[d.id]) }}
+          eventHandlers={{ click: () => onSelect(d.id) }}
+        >
           <Popup>
             {d.name} : {last[d.id]?.temperature ?? '?'} °C
           </Popup>
