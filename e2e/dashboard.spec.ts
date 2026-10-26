@@ -18,8 +18,17 @@ test('connexion avec un compte de test puis tableau de bord', async ({ page }) =
   await page.getByRole('button', { name: 'Se connecter' }).click();
 
   await expect(page.getByRole('heading', { name: 'Supervision des équipements' })).toBeVisible();
-  await expect(page.getByRole('row', { name: /Capteur Versailles/ })).toBeVisible();
+  const row = page.getByRole('row', { name: /Capteur Versailles/ });
+  await expect(row).toBeVisible();
   await expect(page.getByText('Démo en lecture seule')).toBeHidden();
+  // Une mesure arrive par WebSocket (toutes les 3 s)
+  await expect(row).toContainText(/\d+(\.\d)? °C/, { timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Journal des alertes' })).toBeVisible();
+
+  // Clic sur un équipement : graphique de température sur la dernière heure
+  await row.click();
+  await expect(page.getByRole('heading', { name: /Température – Capteur Versailles/ })).toBeVisible();
+  await expect(page.locator('.recharts-line-curve')).toBeVisible({ timeout: 15_000 });
 });
 
 test('mauvais mot de passe : message d’erreur', async ({ page }) => {

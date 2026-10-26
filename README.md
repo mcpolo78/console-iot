@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/mcpolo78/console-iot/actions/workflows/ci.yml/badge.svg)](https://github.com/mcpolo78/console-iot/actions/workflows/ci.yml)
 
-Application fullstack TypeScript : un tableau de bord qui affiche sur une carte des équipements connectés (capteurs, balises, relais) et leurs mesures en temps réel.
+Application fullstack TypeScript : un tableau de bord qui affiche sur une carte des équipements connectés (capteurs, balises, relais), leurs mesures en temps réel, les alertes de dépassement de seuil et l'historique de température.
 
 ![Aperçu](docs/apercu.png)
 
@@ -12,9 +12,10 @@ Application fullstack TypeScript : un tableau de bord qui affiche sur une carte 
 
 | Couche | Technologies |
 |---|---|
-| Front | Next.js 15 (App Router), React 19, TypeScript, Leaflet / OpenStreetMap |
+| Front | Next.js 15 (App Router), React 19, TypeScript, Leaflet / OpenStreetMap, Recharts |
 | API | NestJS 11, REST, WebSockets (Socket.IO), JWT, class-validator, Helmet |
 | Données | PostgreSQL, Prisma (schéma, migrations, seed) |
+| Tests / CI | Jest + Supertest (API), Playwright (e2e), GitHub Actions avec service PostgreSQL |
 | Infra | Docker, docker-compose, Google Cloud Run (API), Vercel (front), Neon (base) |
 
 ## Fonctionnalités
@@ -23,7 +24,22 @@ Application fullstack TypeScript : un tableau de bord qui affiche sur une carte 
 - Démo publique : sans token, le front obtient un accès visiteur `VIEWER` via `POST /auth/demo` (désactivable avec `DEMO_LOGIN=false`)
 - Liste des équipements (API REST protégée)
 - Mesures simulées poussées par WebSocket toutes les 3 s (connexion authentifiée par le token)
-- Carte des équipements, couleur selon l'état
+- Carte des équipements, couleur selon l'état (gris : pas de mesure, vert : normal, rouge : en alerte)
+- **Alertes temps réel** : température > 26 °C ou batterie < 20 % → événement WebSocket `alert`, enregistrée en base (une alerte par franchissement de seuil), bandeau de notification, ligne et marqueur en rouge, journal des alertes (`GET /alerts`). La simulation produit des pics de chaleur et des batteries qui se vident, donc des alertes arrivent régulièrement
+- **Historique** : une mesure sur 5 (toutes les 15 s) est enregistrée en base, purge automatique au-delà de 24 h (reste dans l'offre gratuite Neon). Clic sur un équipement (tableau ou carte) → graphique de température sur la dernière heure, complété en direct
+
+### API
+
+| Méthode | Route | Description |
+|---|---|---|
+| POST | `/auth/login` | `{ email, password }` → `{ token, role }` |
+| GET | `/devices` | liste des équipements (JWT) |
+| GET | `/devices/:id/telemetry?minutes=60` | historique sur N minutes, 24 h max (JWT) |
+| GET | `/alerts` | 50 dernières alertes (JWT) |
+| GET | `/health` | sonde de vie |
+| WS | `telemetry`, `alert` | événements Socket.IO (token dans `auth.token`) |
+
+La simulation et l'enregistrement ne tournent que si au moins un client est connecté (économie sur Cloud Run) : l'historique couvre donc les périodes où la console a été ouverte.
 
 ## Lancer en local
 
@@ -63,8 +79,7 @@ Ou tout en conteneurs : `docker compose up --build` (puis le seed : `docker comp
 
 ## Pistes suivantes
 
-- Historique des mesures et graphiques par équipement
 - Gestion des utilisateurs (écran admin, droits par rôle)
 - Maquettes Figma des écrans
-- Tests (Jest côté API, Playwright côté front) et CI GitHub Actions
+- Seuils d'alerte configurables par équipement, acquittement des alertes
 - Sécurité : scan OWASP ZAP, limitation de débit, journal d'audit

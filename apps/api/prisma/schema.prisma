@@ -29,6 +29,7 @@ model Device {
   lng       Float
   online    Boolean     @default(true)
   telemetry Telemetry[]
+  alerts    Alert[]
 }
 
 model Telemetry {
@@ -40,4 +41,22 @@ model Telemetry {
   at          DateTime @default(now())
 
   @@index([deviceId, at])
+}
+
+enum AlertType {
+  TEMPERATURE
+  BATTERY
+}
+
+model Alert {
+  id        Int       @id @default(autoincrement())
+  device    Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId  Int
+  type      AlertType
+  value     Float
+  threshold Float
+  message   String
+  at        DateTime  @default(now())
+
+  @@index([at])
 }
