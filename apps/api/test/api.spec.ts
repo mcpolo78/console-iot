@@ -69,6 +69,24 @@ describe('API', () => {
       request(app.getHttpServer()).post('/auth/login').send({ email: 'pas-un-email', password: 'x' }).expect(400));
   });
 
+  describe('POST /auth/demo', () => {
+    afterEach(() => delete process.env.DEMO_LOGIN);
+
+    it('donne un accès visiteur (VIEWER) sans mot de passe, accepté par la garde', async () => {
+      const res = await request(app.getHttpServer()).post('/auth/demo').expect(201);
+      expect(res.body.role).toBe('VIEWER');
+      await request(app.getHttpServer())
+        .get('/devices')
+        .set('Authorization', `Bearer ${res.body.token}`)
+        .expect(200);
+    });
+
+    it('est désactivable avec DEMO_LOGIN=false (404)', () => {
+      process.env.DEMO_LOGIN = 'false';
+      return request(app.getHttpServer()).post('/auth/demo').expect(404);
+    });
+  });
+
   describe('garde JWT', () => {
     it('refuse une requête sans token (401)', () => request(app.getHttpServer()).get('/devices').expect(401));
 

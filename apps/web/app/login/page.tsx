@@ -17,6 +17,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
       sessionStorage.setItem('token', token);
+      sessionStorage.removeItem('demo');
       router.push('/');
     } catch {
       setError('Identifiants invalides');
