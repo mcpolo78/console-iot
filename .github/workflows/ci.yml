@@ -8,6 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16
@@ -40,6 +41,7 @@ jobs:
         working-directory: apps/api
         run: npx prisma migrate deploy && npx ts-node prisma/seed.ts
       - name: Navigateur Playwright
+        timeout-minutes: 8
         run: npx playwright install --with-deps chromium
       - name: Tests e2e (Playwright)
         run: npm run test:e2e
