@@ -4,7 +4,7 @@ Application fullstack TypeScript : un tableau de bord qui affiche sur une carte 
 
 ![Aperçu](docs/apercu.png)
 
-**Démo en ligne** : _(lien Vercel à ajouter)_ · compte de test `admin@demo.fr` / `demo1234`
+**Démo en ligne** : https://console-iot-self.vercel.app · compte de test `admin@demo.fr` / `demo1234`
 
 ## Stack
 
@@ -44,7 +44,7 @@ Ou tout en conteneurs : `docker compose up --build` (puis le seed : `docker comp
    ```bash
    gcloud run deploy iot-api --source apps/api --region europe-west1 \
      --allow-unauthenticated --max-instances 1 --timeout 3600 \
-     --set-env-vars DATABASE_URL=<url neon>,JWT_SECRET=<secret>,WEB_ORIGIN=https://<projet>.vercel.app
+     --set-env-vars DATABASE_URL=<url neon>,JWT_SECRET=<secret>,WEB_ORIGIN=https://console-iot-self.vercel.app
    ```
    `--max-instances 1` limite le coût (et évite d'avoir besoin de sessions « collantes » pour Socket.IO). Ajouter un budget avec alertes dans la facturation GCP.
 3. **Front sur Vercel** : importer le dépôt GitHub, dossier racine `apps/web`, variable `NEXT_PUBLIC_API_URL=<url cloud run>`.
