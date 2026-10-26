@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: iot
+      POSTGRES_PASSWORD: iot
+      POSTGRES_DB: iot
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql://iot:iot@db:5432/iot
+      JWT_SECRET: dev-secret
+      WEB_ORIGIN: http://localhost:3000
+      PORT: 4000
+    ports: ["4000:4000"]
+    depends_on: [db]
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports: ["3000:3000"]
+    depends_on: [api]
+volumes:
+  pgdata:
