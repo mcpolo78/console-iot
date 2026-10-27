@@ -1,9 +1,10 @@
 'use client';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import { Alert, api, API_URL, Device, getToken, Telemetry } from '@/lib/api';
+import { Alert, api, API_URL, demoLogin, Device, getToken, Telemetry } from '@/lib/api';
 
 // Leaflet a besoin de window : pas de rendu serveur pour la carte
 const DeviceMap = dynamic(() => import('./components/DeviceMap'), { ssr: false });
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [devices, setDevices] = useState<Device[]>([]);
   const [last, setLast] = useState<Record<number, Telemetry>>({});
+  const [demo, setDemo] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [banner, setBanner] = useState<Alert | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -25,26 +27,45 @@ export default function Dashboard() {
   const selectedRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return router.push('/login');
-    api<Device[]>('/devices').then(setDevices).catch(() => router.push('/login'));
-    api<Alert[]>('/alerts').then(setAlerts).catch(() => {});
+    let socket: ReturnType<typeof io> | undefined;
+    let cancelled = false;
 
-    const socket = io(API_URL, { auth: { token } });
-    socket.on('telemetry', (t: Telemetry) => {
-      setLast((prev) => ({ ...prev, [t.deviceId]: t }));
-      // Les mesures en direct complètent l'historique de l'équipement sélectionné
-      if (t.deviceId === selectedRef.current) {
-        const since = Date.now() - HOUR_MS;
-        setHistory((prev) => [...prev.filter((p) => new Date(p.at).getTime() >= since), t]);
+    async function start() {
+      // Pas de token (ou token expiré) : accès visiteur automatique, sinon écran de connexion
+      let token = getToken();
+      let list = token ? await api<Device[]>('/devices').catch(() => null) : null;
+      if (!list) {
+        try {
+          token = await demoLogin();
+          list = await api<Device[]>('/devices');
+        } catch {
+          return router.push('/login');
+        }
       }
-    });
-    socket.on('alert', (a: Alert) => {
-      setAlerts((prev) => [a, ...prev].slice(0, 50));
-      setBanner(a);
-    });
+      if (cancelled) return;
+      setDevices(list);
+      setDemo(sessionStorage.getItem('demo') === '1');
+      api<Alert[]>('/alerts').then(setAlerts).catch(() => {});
+
+      socket = io(API_URL, { auth: { token } });
+      socket.on('telemetry', (t: Telemetry) => {
+        setLast((prev) => ({ ...prev, [t.deviceId]: t }));
+        // Les mesures en direct complètent l'historique de l'équipement sélectionné
+        if (t.deviceId === selectedRef.current) {
+          const since = Date.now() - HOUR_MS;
+          setHistory((prev) => [...prev.filter((p) => new Date(p.at).getTime() >= since), t]);
+        }
+      });
+      socket.on('alert', (a: Alert) => {
+        setAlerts((prev) => [a, ...prev].slice(0, 50));
+        setBanner(a);
+      });
+    }
+
+    start();
     return () => {
-      socket.disconnect();
+      cancelled = true;
+      socket?.disconnect();
     };
   }, [router]);
 
@@ -69,6 +90,11 @@ export default function Dashboard() {
   return (
     <main>
       <h1>Supervision des équipements</h1>
+      {demo && (
+        <p className="demo">
+          Démo en lecture seule, sans compte. <Link href="/login">Se connecter avec un compte de test</Link>
+        </p>
+      )}
       {banner && (
         <div className="banner" role="alert" onClick={() => setBanner(null)}>
           ⚠ {banner.deviceName} — {banner.message}

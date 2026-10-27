@@ -25,3 +25,13 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
 }
+
+// Démo publique : sans token valide, on demande un accès visiteur (lecture seule) à l'API
+export async function demoLogin() {
+  const res = await fetch(`${API_URL}/auth/demo`, { method: 'POST' });
+  if (!res.ok) throw new Error(`${res.status}`);
+  const { token } = (await res.json()) as { token: string };
+  sessionStorage.setItem('token', token);
+  sessionStorage.setItem('demo', '1');
+  return token;
+}

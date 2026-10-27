@@ -6,7 +6,7 @@ Application fullstack TypeScript : un tableau de bord qui affiche sur une carte 
 
 ![Aperçu](docs/apercu.png)
 
-**Démo en ligne** : https://console-iot-self.vercel.app · compte de test `admin@demo.fr` / `demo1234`
+**Démo en ligne** : https://console-iot-self.vercel.app · accès direct sans compte (lecture seule) ; comptes de test sur `/login` : `admin@demo.fr` / `demo1234`
 
 ## Stack
 
@@ -21,6 +21,7 @@ Application fullstack TypeScript : un tableau de bord qui affiche sur une carte 
 ## Fonctionnalités
 
 - Connexion par JWT, rôles `ADMIN`, `OPERATOR`, `VIEWER`
+- Démo publique : sans token, le front obtient un accès visiteur `VIEWER` via `POST /auth/demo` (désactivable avec `DEMO_LOGIN=false`)
 - Liste des équipements (API REST protégée)
 - Mesures simulées poussées par WebSocket toutes les 3 s (connexion authentifiée par le token)
 - Carte des équipements, couleur selon l'état (gris : pas de mesure, vert : normal, rouge : en alerte)
