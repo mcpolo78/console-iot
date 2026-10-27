@@ -1,6 +1,5 @@
 'use client';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
@@ -91,9 +90,7 @@ export default function Dashboard() {
     <main>
       <h1>Supervision des équipements</h1>
       {demo && (
-        <p className="demo">
-          Démo en lecture seule, sans compte. <Link href="/login">Se connecter avec un compte de test</Link>
-        </p>
+        <p className="demo">Démo en lecture seule, sans compte.</p>
       )}
       {banner && (
         <div className="banner" role="alert" onClick={() => setBanner(null)}>
