@@ -16,7 +16,8 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR');
 
 export default function Dashboard() {
   const router = useRouter();
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<Device[] | null>(null);
+  const [slow, setSlow] = useState(false);
   const [last, setLast] = useState<Record<number, Telemetry>>({});
   const [demo, setDemo] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -62,8 +63,11 @@ export default function Dashboard() {
     }
 
     start();
+    // L'API sur Cloud Run peut mettre une quinzaine de secondes à se réveiller
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
     return () => {
       cancelled = true;
+      clearTimeout(slowTimer);
       socket?.disconnect();
     };
   }, [router]);
@@ -77,7 +81,7 @@ export default function Dashboard() {
       .catch(() => {});
   }
 
-  const selectedDevice = devices.find((d) => d.id === selected);
+  const selectedDevice = devices?.find((d) => d.id === selected);
 
   // Le bandeau disparaît après quelques secondes
   useEffect(() => {
@@ -97,6 +101,13 @@ export default function Dashboard() {
           ⚠ {banner.deviceName} — {banner.message}
         </div>
       )}
+      {!devices ? (
+        <div className="card loading" role="status">
+          <span className="spinner" aria-hidden="true" />
+          <p>Connexion au serveur…</p>
+          {slow && <p className="muted">Le serveur de démo se réveille, cela peut prendre une quinzaine de secondes.</p>}
+        </div>
+      ) : (
       <div className="grid">
         <div className="card">
           <DeviceMap devices={devices} last={last} onSelect={select} />
@@ -115,8 +126,16 @@ export default function Dashboard() {
                 >
                   <td>{d.name}</td>
                   <td>{d.type}</td>
-                  <td>{last[d.id]?.temperature ?? '–'} °C</td>
-                  <td>{last[d.id]?.battery ?? '–'} %</td>
+                  {last[d.id] ? (
+                    <>
+                      <td>{last[d.id].temperature} °C</td>
+                      <td>{last[d.id].battery} %</td>
+                    </>
+                  ) : (
+                    <td colSpan={2} className="muted">
+                      <span className="spinner small" aria-hidden="true" /> En attente des mesures
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -124,11 +143,12 @@ export default function Dashboard() {
           <p className="muted">Cliquer sur un équipement pour voir sa température sur la dernière heure.</p>
         </div>
       </div>
+      )}
       {selectedDevice && (
         <section className="card" style={{ marginTop: 16 }}>
           <h2>Température – {selectedDevice.name} (1 h)</h2>
           {history.length === 0 ? (
-            <p className="muted">Chargement de l’historique…</p>
+            <p className="muted" role="status"><span className="spinner small" aria-hidden="true" /> Chargement de l’historique…</p>
           ) : (
             <TemperatureChart points={history} threshold={26} />
           )}
