@@ -91,11 +91,11 @@ export default function Dashboard() {
   }, [banner]);
 
   return (
-    <main>
-      <h1>Supervision des équipements</h1>
-      {demo && (
-        <p className="demo">Démo en lecture seule, sans compte.</p>
-      )}
+    <main className="console">
+      <header>
+        <h1>Supervision des équipements</h1>
+        {demo && <p className="demo">Démo en lecture seule, sans compte.</p>}
+      </header>
       {banner && (
         <div className="banner" role="alert" onClick={() => setBanner(null)}>
           ⚠ {banner.deviceName} — {banner.message}
@@ -109,10 +109,10 @@ export default function Dashboard() {
         </div>
       ) : (
       <div className="grid">
-        <div className="card">
+        <div className="card map-card">
           <DeviceMap devices={devices} last={last} onSelect={select} />
         </div>
-        <div className="card">
+        <div className="card scroll">
           <table>
             <thead>
               <tr><th>Équipement</th><th>Type</th><th>Temp.</th><th>Batterie</th></tr>
@@ -142,32 +142,34 @@ export default function Dashboard() {
           </table>
           <p className="muted">Cliquer sur un équipement pour voir sa température sur la dernière heure.</p>
         </div>
-      </div>
-      )}
-      {selectedDevice && (
-        <section className="card" style={{ marginTop: 16 }}>
-          <h2>Température – {selectedDevice.name} (1 h)</h2>
-          {history.length === 0 ? (
+        <section className="card">
+          <h2>{selectedDevice ? `Température – ${selectedDevice.name} (1 h)` : 'Température (1 h)'}</h2>
+          {!selectedDevice ? (
+            <p className="muted">Sélectionner un équipement sur la carte ou dans le tableau.</p>
+          ) : history.length === 0 ? (
             <p className="muted" role="status"><span className="spinner small" aria-hidden="true" /> Chargement de l’historique…</p>
           ) : (
-            <TemperatureChart points={history} threshold={26} />
+            <div className="chart">
+              <TemperatureChart points={history} threshold={26} />
+            </div>
           )}
         </section>
+        <section className="card">
+          <h2>Journal des alertes</h2>
+          {alerts.length === 0 ? (
+            <p className="muted">Aucune alerte pour l’instant (seuils : température &gt; 26 °C, batterie &lt; 20 %).</p>
+          ) : (
+            <ul className="alerts">
+              {alerts.map((a) => (
+                <li key={a.id}>
+                  <span className="muted">{time(a.at)}</span> <strong>{a.deviceName}</strong> — {a.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
       )}
-      <section className="card" style={{ marginTop: 16 }}>
-        <h2>Journal des alertes</h2>
-        {alerts.length === 0 ? (
-          <p className="muted">Aucune alerte pour l’instant (seuils : température &gt; 26 °C, batterie &lt; 20 %).</p>
-        ) : (
-          <ul className="alerts">
-            {alerts.map((a) => (
-              <li key={a.id}>
-                <span className="muted">{time(a.at)}</span> <strong>{a.deviceName}</strong> — {a.message}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </main>
   );
 }

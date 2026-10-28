@@ -11,7 +11,7 @@ export default function TemperatureChart({ points, threshold }: { points: Point[
   const fmt = (ms: number) =>
     new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', ...(span < 600_000 && { second: '2-digit' }) });
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -16 }}>
         <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
         <XAxis dataKey="t" type="number" scale="time" domain={['dataMin', 'dataMax']} tickFormatter={fmt} minTickGap={48} stroke="#94a3b8" />
