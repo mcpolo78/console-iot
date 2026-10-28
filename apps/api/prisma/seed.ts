@@ -17,7 +17,7 @@ async function main() {
       data: [
         { name: 'Capteur Versailles', type: 'thermique', lat: 48.8049, lng: 2.1204 },
         { name: 'Capteur Guyancourt', type: 'thermique', lat: 48.7731, lng: 2.0739 },
-        { name: 'Balise Conflans', type: 'gps', lat: 48.9993, lng: 2.0969 },
+        { name: 'Balise Nanterre', type: 'gps', lat: 48.8924, lng: 2.2069 },
         { name: 'Relais Cergy', type: 'radio', lat: 49.0364, lng: 2.0761 },
       ],
     });

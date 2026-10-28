@@ -11,7 +11,7 @@ type Props = { devices: Device[]; last: Record<number, Telemetry>; onSelect: (id
 
 export default function DeviceMap({ devices, last, onSelect }: Props) {
   return (
-    <MapContainer center={[48.9, 2.1]} zoom={10} style={{ height: 400, borderRadius: 8 }}>
+    <MapContainer center={[48.9, 2.1]} zoom={10} className="map">
       <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {devices.map((d) => (
         <CircleMarker
